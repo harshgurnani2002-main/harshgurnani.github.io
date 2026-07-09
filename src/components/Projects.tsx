@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
 
 const PROJECTS = [
@@ -42,48 +43,48 @@ const PROJECTS = [
   },
 ];
 
-// Duplicate for infinite scroll
-const DUPLICATED_PROJECTS = [...PROJECTS, ...PROJECTS];
-
 export default function Projects() {
-  return (
-    <section id="projects" className="relative bg-[#FAFAFA] py-24 lg:py-32 overflow-hidden">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8 mb-16 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as const }}
-        >
-          <div className="mb-4 flex justify-center">
-            <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-600">
-              Portfolio
-            </span>
-          </div>
-          <h2 className="mb-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-            Featured Projects
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Production systems I&apos;ve designed and deployed
-          </p>
-        </motion.div>
-      </div>
+  const targetRef = useRef<HTMLDivElement>(null);
+  
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+  });
 
-      {/* Infinite Horizontal Marquee */}
-      <div className="relative w-full flex overflow-x-hidden group">
-        <motion.div
-          className="flex gap-8 px-4 py-8"
-          animate={{ x: ['0%', '-50%'] }}
-          transition={{
-            duration: 40,
-            ease: 'linear',
-            repeat: Infinity,
-          }}
-        >
-          {DUPLICATED_PROJECTS.map((project, idx) => (
+  // Since we have 4 projects and a title section, let's make it 5 "screens" wide.
+  // The first screen is the title/intro.
+  // Then 4 project screens.
+  const x = useTransform(scrollYProgress, [0, 1], ['0vw', '-400vw']);
+
+  return (
+    <section ref={targetRef} id="projects" className="relative h-[500vh] bg-[#FAFAFA]">
+      <div className="sticky top-0 flex h-screen items-center overflow-hidden">
+        <motion.div style={{ x }} className="flex gap-8 px-[10vw]">
+          
+          {/* Intro Screen */}
+          <div className="flex h-[80vh] w-[80vw] flex-col items-center justify-center shrink-0 text-center px-4">
+            <div className="mb-4">
+              <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-600">
+                Portfolio
+              </span>
+            </div>
+            <h2 className="mb-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl md:text-7xl">
+              Featured Projects
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10">
+              Scroll down to explore production systems I&apos;ve designed and deployed.
+            </p>
+            <div className="animate-bounce">
+              <svg className="w-8 h-8 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Project Screens */}
+          {PROJECTS.map((project, idx) => (
             <div
               key={`${project.title}-${idx}`}
-              className="flex-shrink-0 w-[85vw] max-w-[800px] flex flex-col bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-orange-200 transition-all duration-500"
+              className="flex h-[80vh] w-[85vw] max-w-[1000px] shrink-0 flex-col bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-lg transition-all duration-500 my-auto"
             >
               {/* Browser Window Mockup */}
               <div className="w-full bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center gap-2">
@@ -96,26 +97,26 @@ export default function Projects() {
               </div>
 
               {/* Image Container */}
-              <div className="relative w-full aspect-[16/9] overflow-hidden bg-gray-100">
+              <div className="relative w-full h-[45%] overflow-hidden bg-gray-100 border-b border-gray-100 group">
                 <Image
                   src={project.image}
                   alt={project.title}
                   fill
-                  className="object-cover object-top group-hover:scale-105 transition-transform duration-700"
+                  className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
 
               {/* Content */}
-              <div className="p-8 flex flex-col flex-1">
+              <div className="p-8 flex flex-col flex-1 overflow-y-auto">
                 <div className="mb-2 text-sm font-bold tracking-widest text-orange-500 uppercase">
                   {project.subtitle}
                 </div>
-                <h3 className="mb-4 text-3xl font-bold text-gray-900">{project.title}</h3>
+                <h3 className="mb-3 text-3xl font-bold text-gray-900">{project.title}</h3>
                 <p className="mb-6 text-gray-600 leading-relaxed text-lg">
                   {project.description}
                 </p>
 
-                <div className="mb-8 flex flex-wrap gap-2">
+                <div className="mb-6 flex flex-wrap gap-2">
                   {project.tech.map((t) => (
                     <span
                       key={t}
@@ -140,7 +141,7 @@ export default function Projects() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-orange-500"
                 >
-                  View Project
+                  Visit Website
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
@@ -148,6 +149,9 @@ export default function Projects() {
               </div>
             </div>
           ))}
+
+          {/* Empty spacer so the last card reaches the center */}
+          <div className="w-[10vw] shrink-0" />
         </motion.div>
       </div>
     </section>

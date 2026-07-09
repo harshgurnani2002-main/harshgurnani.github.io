@@ -63,7 +63,7 @@ export default function Philosophy() {
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: '-50px' }}
+          viewport={{ once: true }}
           className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:gap-8"
         >
           {PHILOSOPHIES.map((item, index) => (
