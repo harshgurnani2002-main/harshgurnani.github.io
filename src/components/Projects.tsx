@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
 
@@ -45,20 +45,42 @@ const PROJECTS = [
 
 export default function Projects() {
   const targetRef = useRef<HTMLDivElement>(null);
-  
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [maxScrollX, setMaxScrollX] = useState(0);
+
+  const measureScroll = useCallback(() => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const scrollWidth = container.scrollWidth;
+      const viewportWidth = window.innerWidth;
+      // How far left we need to translate so the last card is fully visible
+      setMaxScrollX(Math.max(0, scrollWidth - viewportWidth));
+    }
+  }, []);
+
+  useEffect(() => {
+    // Measure after mount & images load
+    measureScroll();
+    window.addEventListener('resize', measureScroll);
+    // Re-measure after a short delay to account for image loading
+    const timer = setTimeout(measureScroll, 500);
+    return () => {
+      window.removeEventListener('resize', measureScroll);
+      clearTimeout(timer);
+    };
+  }, [measureScroll]);
+
   const { scrollYProgress } = useScroll({
     target: targetRef,
   });
 
-  // Since we have 4 projects and a title section, let's make it 5 "screens" wide.
-  // The first screen is the title/intro.
-  // Then 4 project screens.
-  const x = useTransform(scrollYProgress, [0, 1], ['0vw', '-400vw']);
+  // Map vertical scroll to the exact measured horizontal distance (in pixels)
+  const x = useTransform(scrollYProgress, [0, 1], [0, -maxScrollX]);
 
   return (
-    <section ref={targetRef} id="projects" className="relative h-[500vh] bg-[#FAFAFA]">
+    <section ref={targetRef} id="projects" className="relative h-[400vh] bg-[#FAFAFA]">
       <div className="sticky top-0 flex h-screen items-center overflow-hidden">
-        <motion.div style={{ x }} className="flex gap-8 px-[10vw]">
+        <motion.div ref={scrollContainerRef} style={{ x }} className="flex gap-8 pl-[10vw] pr-[10vw]">
           
           {/* Intro Screen */}
           <div className="flex h-[80vh] w-[80vw] flex-col items-center justify-center shrink-0 text-center px-4">
@@ -103,6 +125,7 @@ export default function Projects() {
                   alt={project.title}
                   fill
                   className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                  sizes="(max-width: 768px) 85vw, 1000px"
                 />
               </div>
 
@@ -149,9 +172,6 @@ export default function Projects() {
               </div>
             </div>
           ))}
-
-          {/* Empty spacer so the last card reaches the center */}
-          <div className="w-[10vw] shrink-0" />
         </motion.div>
       </div>
     </section>
